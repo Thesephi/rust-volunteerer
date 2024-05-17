@@ -1,12 +1,15 @@
 use std::env;
+use std::fs::create_dir_all;
 use std::fs::read_to_string;
+use std::fs::OpenOptions;
 
 use chrono::Datelike;
 
 static mut COLLEAGUES_RAW: String = String::new();
 static mut COLLEAGUES: Vec<&'static str> = vec![];
 
-fn main() {
+fn main() -> std::io::Result<()> {
+    create_dir_all("db")?;
     let args: Vec<String> = env::args().collect();
     match args.get(1) {
         None => print_volunteer_for_cw(),
@@ -14,6 +17,7 @@ fn main() {
         Some(x) if x == "employees" => unsafe { print_employees() },
         _ => print_volunteer_for_cw(),
     }
+    Ok(())
 }
 
 fn print_volunteer_for_cw() {
@@ -28,7 +32,7 @@ fn print_volunteer_for_cw() {
 
 unsafe fn fetch_employees() {
     COLLEAGUES_RAW.clear();
-    COLLEAGUES_RAW.push_str(read_to_string("db/colleagues.csv").unwrap().trim());
+    COLLEAGUES_RAW.push_str(safely_read_file("db/colleagues.csv").trim());
     COLLEAGUES = COLLEAGUES_RAW.split('\n').collect();
 }
 
@@ -49,10 +53,19 @@ fn get_current_cw() -> u32 {
     chrono::Utc::now().iso_week().week()
 }
 
+fn safely_read_file(filepath: &str) -> String {
+    let file = OpenOptions::new().write(true).create(true).open(filepath);
+    let ret_val = match file {
+        Ok(_) => read_to_string(filepath).unwrap(),
+        Err(_) => String::from(""),
+    };
+    ret_val
+}
+
 fn get_volunteer_for_cw(cw: String) -> String {
     let cur_year = get_current_year();
     let mut target_row = cur_year.to_string() + "," + &cw;
-    let roster_raw = read_to_string("db/roster.csv").unwrap();
+    let roster_raw = safely_read_file("db/roster.csv");
     let roster_str = roster_raw.trim();
     let targeted_row = roster_str
         .split('\n')

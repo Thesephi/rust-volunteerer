@@ -1,3 +1,10 @@
+## [Unreleased]
+
+### Added
+
+- command `./rust-volunteerer next [name]`
+- command `./rust-volunteerer seed`
+
 ## [0.2.0] - 2024-05-17
 
 ### Fixed

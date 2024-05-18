@@ -6,10 +6,16 @@ but then nobody raises a hand?
 `rust-volunteerer` comes to the rescue. This little program saves us from those awkward moments. Also it's not just time that we save, it's the mental overhead
 for everyone involved. So, the larger the group, the more energy we save.
 
-## usage
+## usages
 
 ```bash
 ./rust-volunteerer # return a name from the roster who should be the "volunteer"
+
+./rust-volunteerer seed # generate example contents for empty db files
+
+./rust-volunteerer employees # display all names from the list (db)
+
+./rust-volunteerer next [name] # given a name existing in the list (db), return the one right after it; if all fails, return the 1st name from the list
 ```
 
 ## build

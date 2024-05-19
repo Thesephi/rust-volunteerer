@@ -1,9 +1,14 @@
-## [Unreleased]
+## [0.9.0] - 2024-05-19
 
 ### Added
 
-- command `./rust-volunteerer next [name]`
 - command `./rust-volunteerer seed`
+- command `./rust-volunteerer populate`
+- command `./rust-volunteerer next [name]`
+
+### Changed
+
+- the command `employees` is renamed to `colleagues` to match the literal db name
 
 ## [0.2.0] - 2024-05-17
 

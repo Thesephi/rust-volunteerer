@@ -1,8 +1,6 @@
 use std::env;
-use std::fs::create_dir_all;
-use std::fs::read_to_string;
-use std::fs::{File, OpenOptions};
-use std::io::{BufWriter, Write};
+use std::fs::{create_dir_all, read_to_string, File, OpenOptions};
+use std::io::{BufWriter, Error, ErrorKind, Write};
 
 use chrono::{Datelike, Days, Weekday};
 
@@ -12,24 +10,28 @@ static mut COLLEAGUES: Vec<&'static str> = vec![];
 fn main() -> std::io::Result<()> {
     create_dir_all("db")?;
     unsafe {
-        fetch_employees();
+        fetch_colleagues();
     }
 
     let args: Vec<String> = env::args().collect();
     match args.get(1) {
-        None => print_volunteer_for_cw(),
-        Some(x) if x == "seed" => generate_sample_db(),
-        Some(x) if x == "populate" => populate_roster(),
-        Some(x) if x == "employees" => print_employees(),
-        Some(x) if x == "next" => print_next_name(args.get(2)),
-        _ => print_volunteer_for_cw(),
+        None => print_volunteer_for_current_week(),
+        Some(x) if x == "seed" => generate_sample_db()?,
+        Some(x) if x == "populate" => populate_roster()?,
+        Some(x) if x == "colleagues" => print_colleagues(),
+        Some(x) if x == "next" => print_next_name(args.get(2))?,
+        _ => print_volunteer_for_current_week(),
     }
     Ok(())
 }
 
-fn print_volunteer_for_cw() {
-    let cw = get_current_cw();
-    let volunteer = get_volunteer_for_cw(cw.to_string());
+fn get_volunteer_for_current_week() -> (String, u32) {
+    let cw = get_current_week();
+    (get_volunteer(cw), cw)
+}
+
+fn print_volunteer_for_current_week() {
+    let (volunteer, cw) = get_volunteer_for_current_week();
     // @TODO if voluteer is 'unknown', print a reminder to populate the roster
     println!("┌────────────────────────────────┐");
     println!("│ Current week: {}", cw);
@@ -37,9 +39,9 @@ fn print_volunteer_for_cw() {
     println!("└────────────────────────────────┘");
 }
 
-unsafe fn fetch_employees() {
+unsafe fn fetch_colleagues() {
     COLLEAGUES_RAW.clear();
-    let (file_content, _) = safely_read_file("db/colleagues.csv", false);
+    let (file_content, _) = safely_open_file("db/colleagues.csv", false);
     COLLEAGUES_RAW.push_str(file_content.trim());
     COLLEAGUES = COLLEAGUES_RAW.split('\n').collect();
     if let Some((first, _)) = COLLEAGUES.split_first() {
@@ -51,7 +53,7 @@ unsafe fn fetch_employees() {
     }
 }
 
-fn print_employees() {
+fn print_colleagues() {
     println!("┌────────────────────────────────┐");
     unsafe {
         for c in &COLLEAGUES {
@@ -65,15 +67,15 @@ fn get_current_year() -> i32 {
     chrono::Utc::now().year()
 }
 
-fn get_current_cw() -> u32 {
+fn get_current_week() -> u32 {
     chrono::Utc::now().iso_week().week()
 }
 
-fn safely_read_file(filepath: &str, append_mode: bool) -> (String, Option<File>) {
+fn safely_open_file(filepath: &str, append_flag: bool) -> (String, Option<File>) {
     let file = OpenOptions::new()
         .write(true)
-        .append(append_mode)
-        .create(append_mode)
+        .append(append_flag)
+        .create(true)
         .open(filepath);
     let ret_val = match file {
         Ok(f) => (
@@ -85,10 +87,10 @@ fn safely_read_file(filepath: &str, append_mode: bool) -> (String, Option<File>)
     ret_val
 }
 
-fn get_volunteer_for_cw(cw: String) -> String {
+fn get_volunteer(week: u32) -> String {
     let cur_year = get_current_year();
-    let mut target_row = cur_year.to_string() + "," + &cw;
-    let (roster_raw, _) = safely_read_file("db/roster.csv", false);
+    let mut target_row = cur_year.to_string() + "," + &week.to_string();
+    let (roster_raw, _) = safely_open_file("db/roster.csv", false);
     let roster_str = roster_raw.trim();
     let targeted_row = roster_str
         .split('\n')
@@ -102,14 +104,16 @@ fn get_volunteer_for_cw(cw: String) -> String {
     volunteer.to_string()
 }
 
-fn populate_roster() {
-    populate_roster_from_cw(get_current_cw());
+fn populate_roster() -> std::io::Result<()> {
+    assert_colleagues_db()?;
+    populate_roster_from_current_week(get_current_week())?;
+    Ok(())
 }
 
-fn populate_roster_from_cw(cur_week: u32) {
+fn populate_roster_from_current_week(cur_week: u32) -> std::io::Result<()> {
     let weeks = 12u8; // populate for how many weeks ahead
-    let (roster_raw, file) = safely_read_file("db/roster.csv", true);
-    let def_cur_name = get_volunteer_for_cw(cur_week.to_string());
+    let (roster_raw, file) = safely_open_file("db/roster.csv", true);
+    let def_cur_name = get_volunteer(cur_week);
 
     let def_time = chrono::Utc::now();
     let def_year = def_time.year();
@@ -174,6 +178,8 @@ fn populate_roster_from_cw(cur_week: u32) {
         *cur_week = next_week;
         *cur_year = year_of_next_week as i32;
     }
+    buf.flush()?;
+    Ok(())
 }
 
 unsafe fn get_next_name(cur_name: &str) -> &str {
@@ -184,27 +190,57 @@ unsafe fn get_next_name(cur_name: &str) -> &str {
     // right now calling `.next()` would actually get us
     // the next one after `cur_name`
     it.next().unwrap_or(first)
+    // @TODO propagate "not found" error to the caller
+    // instead of falling back to the 1st name on the list
 }
 
-fn print_next_name(given_name: Option<&String>) {
-    let def_name = &String::from("");
-    let next_name = unsafe { get_next_name(given_name.unwrap_or(def_name)) };
+fn print_next_name(given_name: Option<&String>) -> std::io::Result<()> {
+    assert_colleagues_db()?;
+    let (def_name, _) = get_volunteer_for_current_week();
+    let next_name = unsafe { get_next_name(given_name.unwrap_or(&def_name)) };
     if next_name != "" {
-        println!("{}", next_name);
+        println!("\n{}\n", next_name);
+        Ok(())
     } else {
-        println!("empty db");
+        Err(Error::new(
+            std::io::ErrorKind::InvalidData,
+            "could not retrieve any name",
+        ))
     }
 }
 
-fn generate_sample_db() {
-    println!("\nSorry, this feature is not yet implemented\n");
-    // @TODO write the following lines into `db/colleagues.csv` if that file is empty
-    // ```
-    // employee_id
-    // tom
-    // harry
-    // hermione
-    // lucious
-    // ron
-    // ```
+fn generate_sample_db() -> std::io::Result<()> {
+    let (colleague_raw, file) = safely_open_file("db/colleagues.csv", false);
+    if colleague_raw.trim() != "" {
+        return Err(Error::new(
+            std::io::ErrorKind::InvalidData,
+            "could not generate seed, non-empty 'colleagues' db already existed",
+        ));
+    }
+
+    let mut buf = BufWriter::new(file.unwrap());
+
+    let sample_colleagues = "\
+        employee_id\n\
+        tom\n\
+        harry\n\
+        hermione\n\
+        lucious\n\
+        ron";
+
+    writeln!(buf, "{}", sample_colleagues).unwrap();
+    buf.flush()?;
+    Ok(())
+}
+
+fn assert_colleagues_db() -> std::io::Result<()> {
+    unsafe {
+        if COLLEAGUES_RAW == "" {
+            return Err(Error::new(
+                ErrorKind::InvalidData,
+                "operation failed, 'colleagues' database empty",
+            ));
+        }
+    }
+    Ok(())
 }

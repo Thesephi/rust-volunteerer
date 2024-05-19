@@ -8,14 +8,22 @@ for everyone involved. So, the larger the group, the more energy we save.
 
 ## usages
 
+Heads up: this (overly-simple) program expects 2 `.csv` files as its "database". There's a command that generates the seed database.
+
 ```bash
-./rust-volunteerer # return a name from the roster who should be the "volunteer"
+# return a name from the roster who should be the "volunteer"
+./rust-volunteerer
 
-./rust-volunteerer seed # generate example contents for empty db files
+# generate example contents for empty db files
+./rust-volunteerer seed
 
-./rust-volunteerer employees # display all names from the list (db)
+# display all names from the list (db)
+./rust-volunteerer employees
 
-./rust-volunteerer next [name] # given a name existing in the list (db), return the one right after it; if all fails, return the 1st name from the list
+# given a name existing in the list (db),
+# return the one right after it;
+# if all fails, return the 1st name from the list
+./rust-volunteerer next [name]
 ```
 
 ## build

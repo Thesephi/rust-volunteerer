@@ -1,6 +1,6 @@
 [package]
 name = "rust-volunteerer"
-version = "0.9.0"
+version = "0.9.1"
 edition = "2021"
 
 authors = ["Khang Dinh"]
@@ -8,7 +8,7 @@ authors = ["Khang Dinh"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-chrono = "0.4.38"
+chrono = "0.4.39"
 
 [[bin]]
 name = "rust-volunteerer"

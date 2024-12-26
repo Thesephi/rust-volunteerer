@@ -1,3 +1,9 @@
+## [0.9.1] - 2024-12-26
+
+### Changed
+
+- dependency upgrades: chrono v0.4.39, transitive dependencies
+
 ## [0.9.0] - 2024-05-19
 
 ### Added

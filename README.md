@@ -35,14 +35,15 @@ Heads up: this (overly-simple) program expects 2 `.csv` files as its "database".
 Prerequisite: [rustup toolchain](https://rustup.rs/)
 
 ```bash
-# bad
-rustc main.rs -o build/main # this won't even build, so don't try it
 
-# good
+# build only
 cargo build [--release]
 
 # or to run immediately after build
 cargo run [--release]
+
+# hacking mode
+rustc -L /path/to/dependencies -o build/main main.rs
 ```
 
 ## miscellaneous

@@ -29,7 +29,7 @@ rust-volunteerer colleagues
 # if all fails, return the 1st name from the list
 rust-volunteerer next [name]
 
-# invoking the binary without any argument to enter GUI mode
+# invoking the binary without any argument will enter GUI mode
 rust-volunteerer
 ```
 

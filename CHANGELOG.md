@@ -3,6 +3,11 @@
 ### Added
 
 - Simple GUI with egui.rs
+- CLI argument `current`
+
+### Changed
+
+- updated README
 
 ## [0.9.1] - 2024-12-26
 

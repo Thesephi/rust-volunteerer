@@ -12,22 +12,25 @@ Heads up: this (overly-simple) program expects 2 `.csv` files as its "database".
 
 ```bash
 # generate an example "colleagues" db
-./rust-volunteerer seed
+rust-volunteerer seed
 
 # populate the roster for a certain amount of weeks from now
-./rust-volunteerer populate
+rust-volunteerer populate
 
 # return from the roster name of a colleague
 # who should be the "volunteer" for the current week
-./rust-volunteerer
+rust-volunteerer current
 
 # display all names from the "colleagues" db
-./rust-volunteerer colleagues
+rust-volunteerer colleagues
 
 # given a name existing in the "colleagues" db,
 # return the one right after it;
 # if all fails, return the 1st name from the list
-./rust-volunteerer next [name]
+rust-volunteerer next [name]
+
+# invoking the binary without any argument to enter GUI mode
+rust-volunteerer
 ```
 
 ## build

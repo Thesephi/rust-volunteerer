@@ -1,3 +1,9 @@
+## Unreleased
+
+### Added
+
+- Simple GUI with egui.rs
+
 ## [0.9.1] - 2024-12-26
 
 ### Changed

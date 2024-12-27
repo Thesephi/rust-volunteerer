@@ -1,14 +1,29 @@
 use eframe::egui;
+use std::env;
 mod roster_mgmt;
 
-fn main() {
-    roster_mgmt::init();
+fn main() -> std::io::Result<()> {
+    roster_mgmt::init()?;
+
+    let args: Vec<String> = env::args().collect();
+    match args.get(1) {
+        None => show_gui(),
+        Some(x) if x == "seed" => roster_mgmt::generate_sample_db(),
+        Some(x) if x == "populate" => roster_mgmt::populate_roster(),
+        Some(x) if x == "colleagues" => roster_mgmt::print_colleagues(),
+        Some(x) if x == "next" => roster_mgmt::print_next_name(args.get(2)),
+        _ => roster_mgmt::print_volunteer_for_current_week(),
+    }
+}
+
+fn show_gui() -> std::io::Result<()> {
     let native_options = eframe::NativeOptions::default();
     eframe::run_native(
         "Rust Volunteerer",
         native_options,
         Box::new(|cc| Ok(Box::new(RustVolunteererApp::new(cc)))),
     );
+    Ok(())
 }
 
 #[derive(Default)]

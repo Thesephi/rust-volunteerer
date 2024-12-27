@@ -1,4 +1,3 @@
-use std::env;
 use std::fs::{create_dir_all, read_to_string, File, OpenOptions};
 use std::io::{BufWriter, Error, ErrorKind, Write};
 
@@ -15,33 +14,19 @@ pub fn init() -> std::io::Result<()> {
     Ok(())
 }
 
-pub fn cli() -> std::io::Result<()> {
-    init();
-
-    let args: Vec<String> = env::args().collect();
-    match args.get(1) {
-        None => print_volunteer_for_current_week(),
-        Some(x) if x == "seed" => generate_sample_db()?,
-        Some(x) if x == "populate" => populate_roster()?,
-        Some(x) if x == "colleagues" => print_colleagues(),
-        Some(x) if x == "next" => print_next_name(args.get(2))?,
-        _ => print_volunteer_for_current_week(),
-    }
-    Ok(())
-}
-
 pub fn get_volunteer_for_current_week() -> (String, u32) {
     let cw = get_current_week();
     (get_volunteer(cw), cw)
 }
 
-pub fn print_volunteer_for_current_week() {
+pub fn print_volunteer_for_current_week() -> std::io::Result<()> {
     let (volunteer, cw) = get_volunteer_for_current_week();
     // @TODO if voluteer is 'unknown', print a reminder to populate the roster
     println!("┌────────────────────────────────┐");
     println!("│ Current week: {}", cw);
     println!("│ Our volunteer: {}", volunteer);
     println!("└────────────────────────────────┘");
+    Ok(())
 }
 
 unsafe fn fetch_colleagues() {
@@ -58,7 +43,7 @@ unsafe fn fetch_colleagues() {
     }
 }
 
-pub fn print_colleagues() {
+pub fn print_colleagues() -> std::io::Result<()> {
     println!("┌────────────────────────────────┐");
     unsafe {
         for c in &COLLEAGUES {
@@ -66,6 +51,7 @@ pub fn print_colleagues() {
         }
     }
     println!("└────────────────────────────────┘");
+    Ok(())
 }
 
 fn get_current_year() -> i32 {
